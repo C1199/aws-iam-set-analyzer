@@ -89,13 +89,15 @@ def identify_all_services():
 
 def store_data(filename, data: pd.DataFrame):
 
-    data.to_json(filename)
+    data.to_json(filename, orient="table")
 
     return
 
 def scrape_service_auth():
 
     all_links = identify_all_services()
+
+    all_links = all_links[1:20]
 
     for link in all_links:
         try:
