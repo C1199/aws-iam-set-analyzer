@@ -1,0 +1,15 @@
+[project]
+name = "iam-set-analyzer"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "boto3",
+    "pandas",
+    "beautifulsoup4",
+    "html5lib",
+    "lxml",
+    "requests",
+    "ruff"
+]
