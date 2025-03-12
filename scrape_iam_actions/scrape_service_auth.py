@@ -97,8 +97,6 @@ def scrape_service_auth():
 
     all_links = identify_all_services()
 
-    all_links = all_links[1:20]
-
     for link in all_links:
         try:
             a,r,c, prefix = read_service_auth(base_url + link[2:])

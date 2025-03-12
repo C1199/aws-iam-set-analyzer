@@ -4,6 +4,6 @@ base_path = "scrape_iam_actions"
 
 def load_service_auth(service, type = "actions"):
 
-    df = pd.read_json(f"{base_path}/{type}/{service}.json",orient="columns")
+    df = pd.read_json(f"{base_path}/{type}/{service}.json",orient="table")
 
     return df
