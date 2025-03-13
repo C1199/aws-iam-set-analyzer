@@ -201,15 +201,45 @@ def calculate_set_of_valid_action_resource_pairs_for_statement(statement):
 
     return actions_list
 
-### test
+def determine_effective_permissions_for_policy(policy):
+    '''
+    Takes in an IAM policy and for each statement chunk, calculates the set of Allowed or Denied actions
+    This iterative process uses set theory to calculate the final set of allowed or denied actions
+    '''
 
-thing = load_policy_from_file("test/test-amplify.json")
-statement = thing['Statement'][0]
+    actions_allowed = pd.DataFrame()
+    actions_denied = pd.DataFrame()
 
-result = calculate_set_of_actions(statement)
+    for chunk in policy['Statement']:
+        effect = chunk['Effect']
+        valid_action_resources = calculate_set_of_valid_action_resource_pairs_for_statement(chunk)
+        if effect == "Allow":
+            actions_allowed = pd.concat((actions_allowed, valid_action_resources))
+        else:
+            actions_denied = pd.concat((actions_denied, valid_action_resources))
 
-result = calculate_set_of_resources(statement)
-result
-resource_list = result.loc[result['in_policy']==True]['Resource types'].to_list()
+    actions_denied["Effect"] = "Denied"
+    actions_allowed["Effect"] = "Allowed"
 
-result = calculate_set_of_valid_action_resource_pairs_for_statement(statement)
+    actions_allowed = actions_allowed.where(actions_allowed['Actions'].isin(actions_denied['Actions'])).dropna()
+
+    actions = pd.concat((actions_denied, actions_allowed))
+    actions = actions.drop_duplicates(("Actions"))
+    actions = actions.loc[actions['Valid']==True]
+    
+    return actions
+
+
+if __name__ == "__main__":
+
+    thing = load_policy_from_file("test/test-policy.json")
+    policy=thing
+    actions = determine_effective_permissions_for_policy(policy)
+
+    statement = thing['Statement'][0]
+
+    result = calculate_set_of_actions(statement)
+
+    result = calculate_set_of_resources(statement)
+    result
+    resource_list = result.loc[result['in_policy']==True]['Resource types'].to_list()
