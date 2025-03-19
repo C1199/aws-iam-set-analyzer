@@ -82,7 +82,12 @@ def calculate_set_of_actions(statement):
     # create a dictionary of the services and corresponding actions
     actions_dict = defaultdict(list)
 
-    for action in statement['Action']:
+    if 'Action' in statement:
+        act_key = 'Action'
+    else:
+        act_key = 'NotAction'
+
+    for action in statement[act_key]:
         if action == "*":
             actions_dict['*'].append('*')
         else:
@@ -94,11 +99,15 @@ def calculate_set_of_actions(statement):
 
     # for each service, load the service data, pull out the set of relevant IAM actions
     for key in actions_dict:
-        service_auth = load_service_auth.load_service_auth(key)
-        # The index of the actions data is funky, so we reset to make it easier to work with
-        service_auth = service_auth.reset_index()
-        service_auth['in_policy'] = service_auth['Actions'].apply(wildcard_match_list, check_list=actions_dict[key])
-        actions_set = pd.concat((actions_set, service_auth))
+        if key == '*':
+            service_auth = load_service_auth.load_all_service_auth()
+            service_auth['in_policy'] = True
+            actions_set = service_auth
+            break
+        else:
+            service_auth = load_service_auth.load_service_auth(key)
+            service_auth['in_policy'] = service_auth['Actions'].apply(wildcard_match_list, check_list=actions_dict[key])
+            actions_set = pd.concat((actions_set, service_auth))
 
     actions_set = actions_set.loc[actions_set['in_policy']==True]
 
@@ -112,7 +121,12 @@ def calculate_set_of_resources(statement):
     # resources dict
     resources_dict = defaultdict(list)
 
-    for resource in statement['Resource']:
+    if 'Resource' in statement:
+        res_key = 'Resource'
+    else:
+        res_key = 'NotResource'
+
+    for resource in statement[res_key]:
         if resource == "*":
             resources_dict["*"].append("*")
         else:
@@ -122,10 +136,16 @@ def calculate_set_of_resources(statement):
     resources_set = pd.DataFrame()
 
     for key in resources_dict:
-        resources_auth = load_service_auth.load_service_auth(key,'resources')
-        check_list = [extract_resource_type_from_arn(x) for x in resources_dict[key]]
-        resources_auth['in_policy'] = resources_auth['Resource types'].apply(wildcard_match_list,check_list=check_list)
-        resources_set = pd.concat((resources_set, resources_auth))
+        if key == '*':
+            resources_auth = load_service_auth.load_all_resource_auth()
+            resources_auth['in_policy'] = True
+            resources_set = resources_auth
+            break
+        else:
+            resources_auth = load_service_auth.load_service_auth(key,'resources')
+            check_list = [extract_resource_type_from_arn(x) for x in resources_dict[key]]
+            resources_auth['in_policy'] = resources_auth['Resource types'].apply(wildcard_match_list,check_list=check_list)
+            resources_set = pd.concat((resources_set, resources_auth))
 
     return resources_set
 
@@ -143,7 +163,7 @@ def calculate_actions_by_resource_lst(service_actions, resources):
     # explode the 'Resource types (required)' column
     actions = actions.explode('Resource types (*required)')
     # Group the resources together into a set per action
-    actions_groupby =  actions[['Actions','Resource types (*required)']].groupby(['Actions'],dropna=False)['Resource types (*required)'].apply(set)
+    actions_groupby =  actions[['Prefix','Actions','Resource types (*required)']].groupby(['Actions'],dropna=False)['Resource types (*required)'].apply(set)
     # Merge the resource sets onto the list of actions
     actions_list = pd.merge(actions_list, actions_groupby, 'left', left_on='Actions', right_on='Actions')
     # identify the required resources by the presence of '*'
@@ -159,15 +179,25 @@ def calculate_actions_by_resource_lst(service_actions, resources):
     # attached the * to them
     resource_with_star = []
     resources_without_star = []
+    none_in_resource_list = False
     for x in resources:
-        if x.endswith('*'):
+        if x == None:
             resource_with_star.append(x)
-            t = x.replace('*','')
-            resources_without_star.append(t)
+            print(f"appending none type {x} to list")
+            none_in_resource_list = True
+            pass
         else:
-            t = x +"*"
-            resource_with_star.append(t)
-            resources_without_star.append(x)
+            try:
+                if x.endswith('*'):
+                    resource_with_star.append(x)
+                    t = x.replace('*','')
+                    resources_without_star.append(t)
+                else:
+                    t = x +"*"
+                    resource_with_star.append(t)
+                    resources_without_star.append(x)
+            except Exception as e:
+                print(x)
 
     resource_with_star = set(resource_with_star)
     resources_without_star = set(resources_without_star)
@@ -180,10 +210,9 @@ def calculate_actions_by_resource_lst(service_actions, resources):
 
     # Calcuate actions that might be Valid
     actions_list['Maybe'] = [ set.intersection(x, resources_without_star) for x in actions_list['Optional resources']]
-    actions_list.loc[(actions_list['Maybe']!=set())]
-    actions_list.loc[(actions_list['Required resources']==set())]
-    actions_list.loc[(actions_list['Required resources']==set()) &( actions_list['Maybe']!=set())]
     actions_list.loc[(actions_list['Required resources']==set())&(actions_list['Maybe']!=set()), ['Valid']] = True
+    if none_in_resource_list:
+        actions_list.loc[(actions_list['Optional resources'] == actions_list['Resource types (*required)']), ['Valid']] = True
 
     return actions_list
 
@@ -191,12 +220,12 @@ def calculate_actions_by_resource_lst(service_actions, resources):
 def calculate_set_of_valid_action_resource_pairs_for_statement(statement):
     '''
     Takes in a policy statement chunk. Calculates the sets of actions and resources mentioned.
-    Identifies all valid action+resource pairs
+    Identifies all valid action+resource pairs for the statement
     '''
 
     actions_set = calculate_set_of_actions(statement)
     resources_set = calculate_set_of_resources(statement)
-    resource_list = resources_set.loc[resources_set['in_policy']==True]['Resource types'].to_list()
+    resource_list = resources_set.loc[resources_set['in_policy']==True]['Resource types'].drop_duplicates().to_list()
     actions_list = calculate_actions_by_resource_lst(actions_set,resource_list)
 
     return actions_list
@@ -221,7 +250,8 @@ def determine_effective_permissions_for_policy(policy):
     actions_denied["Effect"] = "Denied"
     actions_allowed["Effect"] = "Allowed"
 
-    actions_allowed = actions_allowed.where(actions_allowed['Actions'].isin(actions_denied['Actions'])).dropna()
+    actions_allowed = actions_allowed.where(~actions_allowed['Actions'].isin(actions_denied['Actions'])).dropna()
+    
 
     actions = pd.concat((actions_denied, actions_allowed))
     actions = actions.drop_duplicates(("Actions"))
@@ -232,7 +262,7 @@ def determine_effective_permissions_for_policy(policy):
 
 if __name__ == "__main__":
 
-    thing = load_policy_from_file("test/test-policy.json")
+    thing = load_policy_from_file("tests/test-policy.json")
     policy=thing
     actions = determine_effective_permissions_for_policy(policy)
 
