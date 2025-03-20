@@ -7,6 +7,25 @@ from fnmatch import fnmatch
 
 importlib.reload(load_service_auth)
 
+def action_notaction_resource_notresource(d):
+    '''
+    Returns the keys for Action, NotAction, or Resource and NotResource
+    param d: dict
+    '''
+
+    if 'Action' in statement:
+        act_key = 'Action'
+    else:
+        act_key = 'NotAction'
+
+    
+    if 'Resource' in statement:
+        res_key = 'Resource'
+    else:
+        res_key = 'NotResource'
+
+    return act_key, res_key
+
 def extract_service_from_arn(arn):
     '''
     Takes in an ARN an returns the service
@@ -111,6 +130,17 @@ def calculate_set_of_actions(statement):
 
     actions_set = actions_set.loc[actions_set['in_policy']==True]
 
+    print("actions head")
+    print(actions_set)
+
+    if act_key == 'NotAction':
+        print(f"Not Action!!!")
+        not_list = actions_set.loc[actions_set['in_policy']==True][['Prefix','Actions']].drop_duplicates(ignore_index=True)
+        service_auth = load_service_auth.load_all_service_auth()
+        service_auth = service_auth.merge(not_list, how='left',on=['Prefix','Actions'],indicator='Exist')
+        service_auth['in_policy'] = service_auth['Exist']!='both'
+        actions_set = service_auth.loc[service_auth['in_policy']==True]
+    
     return actions_set
 
 def calculate_set_of_resources(statement):
@@ -147,10 +177,17 @@ def calculate_set_of_resources(statement):
             resources_auth['in_policy'] = resources_auth['Resource types'].apply(wildcard_match_list,check_list=check_list)
             resources_set = pd.concat((resources_set, resources_auth))
 
+    if res_key == 'NotResource':
+        not_list = resources_set.loc[resources_set['in_policy']==True]['Resource types'].drop_duplicates()
+        resources_auth = load_service_auth.load_all_resource_auth()
+        resources_auth = resources_auth.merge(not_list, how='left',on=['Resource types'],indicator='Exist')
+        resources_auth['in_policy'] = resources_auth['Exist']!='both'
+        resources_set = resources_auth
+
     return resources_set
 
 
-def calculate_actions_by_resource_lst(service_actions, resources):
+def calculate_actions_by_resource_lst(service_actions: pd.DataFrame, resources):
     '''
     service_actions: pandas dataframe containing an "Actions" table
     resources: list, of resources types in a single policy statement
@@ -158,14 +195,14 @@ def calculate_actions_by_resource_lst(service_actions, resources):
 
     actions = service_actions
     # Deduplicate the set of actions
-    actions_list = actions['Actions'].drop_duplicates()
+    actions_list = actions[['Prefix','Actions']].drop_duplicates()
 
     # explode the 'Resource types (required)' column
     actions = actions.explode('Resource types (*required)')
     # Group the resources together into a set per action
-    actions_groupby =  actions[['Prefix','Actions','Resource types (*required)']].groupby(['Actions'],dropna=False)['Resource types (*required)'].apply(set)
+    actions_groupby =  actions[['Prefix','Actions','Resource types (*required)']].groupby(['Prefix','Actions'],dropna=False)['Resource types (*required)'].apply(set)
     # Merge the resource sets onto the list of actions
-    actions_list = pd.merge(actions_list, actions_groupby, 'left', left_on='Actions', right_on='Actions')
+    actions_list = pd.merge(actions_list, actions_groupby, 'left', left_on=['Prefix','Actions'], right_on=['Prefix','Actions'])
     # identify the required resources by the presence of '*'
     actions_list['Required resources'] = [{t for t in x if (type(t)==str)} for x in actions_list['Resource types (*required)']]
     actions_list['Required resources'] = [{t for t in x if t.endswith('*')} for x in actions_list['Required resources']]
@@ -224,8 +261,11 @@ def calculate_set_of_valid_action_resource_pairs_for_statement(statement):
     '''
 
     actions_set = calculate_set_of_actions(statement)
+    print(f"{actions_set.count()}")
     resources_set = calculate_set_of_resources(statement)
+    print(f"{resources_set.head()}")
     resource_list = resources_set.loc[resources_set['in_policy']==True]['Resource types'].drop_duplicates().to_list()
+    print(f"{resource_list}")
     actions_list = calculate_actions_by_resource_lst(actions_set,resource_list)
 
     return actions_list
@@ -240,6 +280,7 @@ def determine_effective_permissions_for_policy(policy):
     actions_denied = pd.DataFrame()
 
     for chunk in policy['Statement']:
+        act_key, res_key = action_notaction_resource_notresource(chunk)
         effect = chunk['Effect']
         valid_action_resources = calculate_set_of_valid_action_resource_pairs_for_statement(chunk)
         if effect == "Allow":
