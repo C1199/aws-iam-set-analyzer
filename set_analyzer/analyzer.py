@@ -284,13 +284,19 @@ def determine_effective_permissions_for_policy(policy):
         else:
             actions_denied_list.append(valid_action_resources)
 
-    actions_allowed = pd.concat(actions_allowed_list)
-    actions_allowed = actions_allowed.loc[actions_allowed['Valid']==True]
-    actions_allowed["Effect"] = "Allowed"
+    column_names = valid_action_resources.columns
+    actions_allowed = pd.DataFrame(columns=column_names)
+    actions_denied = pd.DataFrame(columns=column_names)
+
+    if len(actions_allowed_list) > 0:
+        actions_allowed = pd.concat(actions_allowed_list)
+        actions_allowed = actions_allowed.loc[actions_allowed['Valid']==True]
+        actions_allowed["Effect"] = "Allowed"
     
-    actions_denied = pd.concat(actions_denied_list)
-    actions_denied = actions_denied.loc[actions_denied['Valid']==True]
-    actions_denied["Effect"] = "Denied"
+    if len(actions_denied_list) > 0:
+        actions_denied = pd.concat(actions_denied_list)
+        actions_denied = actions_denied.loc[actions_denied['Valid']==True]
+        actions_denied["Effect"] = "Denied"
 
     effective_permissions = pd.merge(actions_allowed,actions_denied,how='outer',on=['Prefix','Actions'],indicator='Exist',suffixes=['_allow','_deny'])
     effective_permissions.loc[effective_permissions['Exist'] == 'left_only', 'Effect'] = "Allowed"

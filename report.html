@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Policy Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+        }
+        h2 {
+            color: #555;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 5px;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Policy Report</h1>
+
+    <h2>Policy</h2>
+    <pre>{
+  "Statement": [
+    {
+      "Action": [
+        "iam:Create*"
+      ],
+      "Condition": {
+        "StringEqualsIfExists": {
+          "aws:ResourceTag/owner": "${aws:PrincipalTag/owner}"
+        }
+      },
+      "Effect": "Allow",
+      "Resource": [
+        "*"
+      ]
+    },
+    {
+      "Action": [
+        "*"
+      ],
+      "Condition": {
+        "StringEqualsIfExists": {
+          "aws:ResourceTag/owner": "${aws:PrincipalTag/owner}"
+        }
+      },
+      "Effect": "Allow",
+      "Resource": [
+        "arn:${Partition}:amplify:${Region}:${Account}:webhooks/*",
+        "arn:${Partition}:amplify:${Region}:${Account}:apps/*"
+      ]
+    }
+  ],
+  "Version": "2012-10-17"
+}</pre>
+
+    <h2>Effective Permissions</h2>
+    
+    <div>
+    <table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Prefix</th>
+      <th>Actions</th>
+      <th>Resource types (*required)_allow</th>
+      <th>Required resources_allow</th>
+      <th>Optional resources_allow</th>
+      <th>Valid_allow</th>
+      <th>Maybe_allow</th>
+      <th>Effect</th>
+      <th>Resource types (*required)_deny</th>
+      <th>Required resources_deny</th>
+      <th>Optional resources_deny</th>
+      <th>Valid_deny</th>
+      <th>Maybe_deny</th>
+      <th>Exist</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>iam</td>
+      <td>CreateAccessKey</td>
+      <td>{user*}</td>
+      <td>{user*}</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>iam</td>
+      <td>CreateAccountAlias</td>
+      <td>{None}</td>
+      <td>{}</td>
+      <td>{None}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>iam</td>
+      <td>CreateGroup</td>
+      <td>{group*}</td>
+      <td>{group*}</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>iam</td>
+      <td>CreateInstanceProfile</td>
+      <td>{instance-profile*, None}</td>
+      <td>{instance-profile*}</td>
+      <td>{None}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>iam</td>
+      <td>CreateLoginProfile</td>
+      <td>{user*}</td>
+      <td>{user*}</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>iam</td>
+      <td>CreateOpenIDConnectProvider</td>
+      <td>{oidc-provider*, None}</td>
+      <td>{oidc-provider*}</td>
+      <td>{None}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>iam</td>
+      <td>CreatePolicy</td>
+      <td>{policy*, None}</td>
+      <td>{policy*}</td>
+      <td>{None}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>7</th>
+      <td>iam</td>
+      <td>CreatePolicyVersion</td>
+      <td>{policy*}</td>
+      <td>{policy*}</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>8</th>
+      <td>iam</td>
+      <td>CreateRole</td>
+      <td>{role*, None}</td>
+      <td>{role*}</td>
+      <td>{None}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>9</th>
+      <td>iam</td>
+      <td>CreateSAMLProvider</td>
+      <td>{saml-provider*, None}</td>
+      <td>{saml-provider*}</td>
+      <td>{None}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>10</th>
+      <td>iam</td>
+      <td>CreateServiceLinkedRole</td>
+      <td>{role*, None}</td>
+      <td>{role*}</td>
+      <td>{None}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>11</th>
+      <td>iam</td>
+      <td>CreateServiceSpecificCredential</td>
+      <td>{user*}</td>
+      <td>{user*}</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>12</th>
+      <td>iam</td>
+      <td>CreateUser</td>
+      <td>{user*, None}</td>
+      <td>{user*}</td>
+      <td>{None}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>13</th>
+      <td>iam</td>
+      <td>CreateVirtualMFADevice</td>
+      <td>{mfa*, None}</td>
+      <td>{mfa*}</td>
+      <td>{None}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>14</th>
+      <td>mobiletargeting</td>
+      <td>CreateApp</td>
+      <td>{apps*, None}</td>
+      <td>{apps*}</td>
+      <td>{None}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>15</th>
+      <td>mobiletargeting</td>
+      <td>GetApps</td>
+      <td>{apps*}</td>
+      <td>{apps*}</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>16</th>
+      <td>amplify</td>
+      <td>AssociateWebACL</td>
+      <td>{apps*}</td>
+      <td>{apps*}</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>17</th>
+      <td>amplify</td>
+      <td>CreateApp</td>
+      <td>{apps*, None}</td>
+      <td>{apps*}</td>
+      <td>{None}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>18</th>
+      <td>amplify</td>
+      <td>CreateBackendEnvironment</td>
+      <td>{apps*}</td>
+      <td>{apps*}</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>19</th>
+      <td>amplify</td>
+      <td>DeleteApp</td>
+      <td>{apps*}</td>
+      <td>{apps*}</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>20</th>
+      <td>amplify</td>
+      <td>DeleteBackendEnvironment</td>
+      <td>{apps*}</td>
+      <td>{apps*}</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>21</th>
+      <td>amplify</td>
+      <td>DeleteWebHook</td>
+      <td>{webhooks*}</td>
+      <td>{webhooks*}</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>22</th>
+      <td>amplify</td>
+      <td>DisassociateWebACL</td>
+      <td>{apps*}</td>
+      <td>{apps*}</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>23</th>
+      <td>amplify</td>
+      <td>GenerateAccessLogs</td>
+      <td>{apps*}</td>
+      <td>{apps*}</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>24</th>
+      <td>amplify</td>
+      <td>GetApp</td>
+      <td>{apps*}</td>
+      <td>{apps*}</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>25</th>
+      <td>amplify</td>
+      <td>GetArtifactUrl</td>
+      <td>{apps*}</td>
+      <td>{apps*}</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>26</th>
+      <td>amplify</td>
+      <td>GetBackendEnvironment</td>
+      <td>{apps*}</td>
+      <td>{apps*}</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>27</th>
+      <td>amplify</td>
+      <td>GetWebACLForResource</td>
+      <td>{apps*}</td>
+      <td>{apps*}</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>28</th>
+      <td>amplify</td>
+      <td>GetWebHook</td>
+      <td>{webhooks*}</td>
+      <td>{webhooks*}</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>29</th>
+      <td>amplify</td>
+      <td>ListArtifacts</td>
+      <td>{apps*}</td>
+      <td>{apps*}</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>30</th>
+      <td>amplify</td>
+      <td>ListBackendEnvironments</td>
+      <td>{apps*}</td>
+      <td>{apps*}</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>31</th>
+      <td>amplify</td>
+      <td>ListBranches</td>
+      <td>{apps*}</td>
+      <td>{apps*}</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>32</th>
+      <td>amplify</td>
+      <td>ListDomainAssociations</td>
+      <td>{apps*}</td>
+      <td>{apps*}</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>33</th>
+      <td>amplify</td>
+      <td>ListTagsForResource</td>
+      <td>{webhooks, branches, apps, domains}</td>
+      <td>{}</td>
+      <td>{webhooks, branches, apps, domains}</td>
+      <td>True</td>
+      <td>{webhooks, apps}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>34</th>
+      <td>amplify</td>
+      <td>ListWebHooks</td>
+      <td>{apps*}</td>
+      <td>{apps*}</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>35</th>
+      <td>amplify</td>
+      <td>TagResource</td>
+      <td>{branches, domains, webhooks, apps, None}</td>
+      <td>{}</td>
+      <td>{webhooks, branches, domains, apps, None}</td>
+      <td>True</td>
+      <td>{webhooks, apps}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>36</th>
+      <td>amplify</td>
+      <td>UntagResource</td>
+      <td>{branches, domains, webhooks, apps, None}</td>
+      <td>{}</td>
+      <td>{webhooks, branches, domains, apps, None}</td>
+      <td>True</td>
+      <td>{webhooks, apps}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>37</th>
+      <td>amplify</td>
+      <td>UpdateApp</td>
+      <td>{apps*}</td>
+      <td>{apps*}</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+    <tr>
+      <th>38</th>
+      <td>amplify</td>
+      <td>UpdateWebHook</td>
+      <td>{webhooks*}</td>
+      <td>{webhooks*}</td>
+      <td>{}</td>
+      <td>True</td>
+      <td>{}</td>
+      <td>Allowed</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>left_only</td>
+    </tr>
+  </tbody>
+</table>
+    </div>
+    
+    <h2>Findings</h2>
+    <ul>
+        <li>item</li>
+    </ul>
+
+</body>
+</html>
