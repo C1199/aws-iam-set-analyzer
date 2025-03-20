@@ -261,11 +261,8 @@ def calculate_set_of_valid_action_resource_pairs_for_statement(statement):
     '''
 
     actions_set = calculate_set_of_actions(statement)
-    print(f"{actions_set.count()}")
     resources_set = calculate_set_of_resources(statement)
-    print(f"{resources_set.head()}")
     resource_list = resources_set.loc[resources_set['in_policy']==True]['Resource types'].drop_duplicates().to_list()
-    print(f"{resource_list}")
     actions_list = calculate_actions_by_resource_lst(actions_set,resource_list)
 
     return actions_list
@@ -276,29 +273,31 @@ def determine_effective_permissions_for_policy(policy):
     This iterative process uses set theory to calculate the final set of allowed or denied actions
     '''
 
-    actions_allowed = pd.DataFrame()
-    actions_denied = pd.DataFrame()
+    actions_allowed_list = list()
+    actions_denied_list = list()
 
     for chunk in policy['Statement']:
-        act_key, res_key = action_notaction_resource_notresource(chunk)
         effect = chunk['Effect']
         valid_action_resources = calculate_set_of_valid_action_resource_pairs_for_statement(chunk)
         if effect == "Allow":
-            actions_allowed = pd.concat((actions_allowed, valid_action_resources))
+            actions_allowed_list.append(valid_action_resources)
         else:
-            actions_denied = pd.concat((actions_denied, valid_action_resources))
+            actions_denied_list.append(valid_action_resources)
 
-    actions_denied["Effect"] = "Denied"
+    actions_allowed = pd.concat(actions_allowed_list)
+    actions_allowed = actions_allowed.loc[actions_allowed['Valid']==True]
     actions_allowed["Effect"] = "Allowed"
-
-    actions_allowed = actions_allowed.where(~actions_allowed['Actions'].isin(actions_denied['Actions'])).dropna()
     
+    actions_denied = pd.concat(actions_denied_list)
+    actions_denied = actions_denied.loc[actions_denied['Valid']==True]
+    actions_denied["Effect"] = "Denied"
 
-    actions = pd.concat((actions_denied, actions_allowed))
-    actions = actions.drop_duplicates(("Actions"))
-    actions = actions.loc[actions['Valid']==True]
-    
-    return actions
+    effective_permissions = pd.merge(actions_allowed,actions_denied,how='outer',on=['Prefix','Actions'],indicator='Exist',suffixes=['_allow','_deny'])
+    effective_permissions.loc[effective_permissions['Exist'] == 'left_only', 'Effect'] = "Allowed"
+    effective_permissions.loc[effective_permissions['Exist'] == 'both', 'Effect'] = "Denied"
+    effective_permissions.loc[effective_permissions['Exist'] == 'right_only', 'Effect'] = "Denied"
+
+    return effective_permissions
 
 
 if __name__ == "__main__":
