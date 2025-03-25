@@ -194,14 +194,16 @@ def calculate_actions_by_resource_lst(actions: pd.DataFrame, resources: pd.DataF
     '''
     # Prep the actions
     # Deduplicate the set of actions
+    actions.loc[actions['resource_service'].isna(), 'resource_service'] = actions['Prefix']
     actions_list = actions[['Prefix','Actions']].drop_duplicates()
 
     # explode the 'Resource types (required)' column
-    actions = actions.explode('Resource types (*required)')
+    actions_exploded = actions.explode('Resource types (*required)')
     # Group the resources together into a set per action
-    actions_groupby =  actions[['Prefix','Actions','Resource types (*required)']].groupby(['Prefix','Actions'],dropna=False)['Resource types (*required)'].apply(set)
+    # these steps use the Service Auth details to figure out what the required and options resources are
+    actions_groupby =  actions_exploded[['Prefix','Actions','Resource types (*required)','resource_service']].groupby(['Prefix','Actions','resource_service'],dropna=False)['Resource types (*required)'].apply(set)
     # Merge the resource sets onto the list of actions
-    actions_list = pd.merge(actions_list, actions_groupby, 'left', left_on=['Prefix','Actions'], right_on=['Prefix','Actions'])
+    actions_list = pd.merge(actions_list.reset_index(), actions_groupby.reset_index(), 'left', left_on=['Prefix','Actions'], right_on=['Prefix','Actions'])
     # identify the required resources by the presence of '*'
     actions_list['Required resources'] = [{t for t in x if (type(t)==str)} for x in actions_list['Resource types (*required)']]
     actions_list['Required resources'] = [{t for t in x if t.endswith('*')} for x in actions_list['Required resources']]
@@ -211,7 +213,7 @@ def calculate_actions_by_resource_lst(actions: pd.DataFrame, resources: pd.DataF
 
     resources = resources.loc[resources['in_policy']==True]
     resources = resources[['Resource types','resource_service']].groupby(['resource_service'],dropna=False)['Resource types'].apply(set).to_frame()
-    actions_list = pd.merge(actions_list, resources, how='left', left_on=['Prefix'], right_on=['resource_service'])
+    actions_list = pd.merge(actions_list, resources, how='left', left_on=['resource_service'], right_on=['resource_service'])
     actions_list['Valid'] = actions_list['Required resources'] <= actions_list['Resource types']
 
     # remove empty sets from the solution

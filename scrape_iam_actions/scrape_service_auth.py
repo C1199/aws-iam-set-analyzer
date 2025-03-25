@@ -99,13 +99,16 @@ def read_service_auth(url):
         # create a copy
         act = actions.copy()
         act = act.explode(['Condition keys'])
-        act = act[['Prefix','Actions','Resource types (*required)','Condition keys']].groupby(['Prefix','Actions','Condition keys'],dropna=False)['Resource types (*required)'].apply(list)
+        act = act[['Prefix','Actions','Resource types (*required)','Condition keys','resource_service']].groupby(['Prefix','Actions','Condition keys','resource_service'],dropna=False)['Resource types (*required)'].apply(list)
         # the actions dataframe is a multiindex frame with index "Prefix","Actions","Condition keys"
         actions = pd.DataFrame(act)
 
         # calculate the conditions table
         if conditions_data_present:
-            conditions = data[2]
+            if resources_data_present:
+                conditions = data[2]
+            else:
+                conditions = data[1]
             conditions['Prefix'] = prefix
         else:
             print(f"No conditions list for {prefix}")
