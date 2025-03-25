@@ -62,3 +62,23 @@ def load_all_resource_auth():
     resources_auth = resources_auth.reset_index(drop=True)
 
     return resources_auth
+
+def create_resources_global_set():
+    '''
+    Service have their own resources. But some services have actions whose valid resource pairs are from another service.
+    A notable example of this is STS, which uses IAM roles in it's policies.
+    This function creates a master dataset of all resources, and identifies the "parent" service that the resource is from
+    '''
+    resources = load_all_resource_auth()
+    resources.loc[resources['Resource types'].isna(), 'resource_service'] = resources['Prefix']
+
+    resources.to_json(f"{base_path}/global_resources/global_resources.json", orient="table")
+
+    return resources
+
+def load_global_resources_set():
+    df = pd.read_json(f"{base_path}/global_resources/global_resources.json",orient="table")
+    return df
+
+if __name__ == "__main__":
+    create_resources_global_set()
