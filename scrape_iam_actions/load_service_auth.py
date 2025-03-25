@@ -4,9 +4,13 @@ import os
 base_path = "scrape_iam_actions"
 
 def load_service_auth(service, type = "actions"):
-    df = pd.read_json(f"{base_path}/{type}/{service}.json",orient="table")
-    # The index of the actions data is funky, so we reset to make it easier to work with
-    df = df.reset_index()
+    try:
+        df = pd.read_json(f"{base_path}/{type}/{service}.json",orient="table")
+        # The index of the actions data is funky, so we reset to make it easier to work with
+        df = df.reset_index()
+    except Exception as e:
+        print(f"Data for {service} {type} does not exist!")
+        raise e
     return df
 
 def load_all_service_auth():

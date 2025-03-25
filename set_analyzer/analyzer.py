@@ -124,9 +124,12 @@ def calculate_set_of_actions(statement):
             actions_set = service_auth
             break
         else:
-            service_auth = load_service_auth.load_service_auth(key)
-            service_auth['in_policy'] = service_auth['Actions'].apply(wildcard_match_list, check_list=actions_dict[key])
-            actions_set = pd.concat((actions_set, service_auth))
+            try:
+                service_auth = load_service_auth.load_service_auth(key)
+                service_auth['in_policy'] = service_auth['Actions'].apply(wildcard_match_list, check_list=actions_dict[key])
+                actions_set = pd.concat((actions_set, service_auth))
+            except Exception as e:
+                print(f"Error {e}")
 
     actions_set = actions_set.loc[actions_set['in_policy']==True]
 
@@ -172,10 +175,13 @@ def calculate_set_of_resources(statement):
             resources_set = resources_auth
             break
         else:
-            resources_auth = load_service_auth.load_service_auth(key,'resources')
-            check_list = [extract_resource_type_from_arn(x) for x in resources_dict[key]]
-            resources_auth['in_policy'] = resources_auth['Resource types'].apply(wildcard_match_list,check_list=check_list)
-            resources_set = pd.concat((resources_set, resources_auth))
+            try:
+                resources_auth = load_service_auth.load_service_auth(key,'resources')
+                check_list = [extract_resource_type_from_arn(x) for x in resources_dict[key]]
+                resources_auth['in_policy'] = resources_auth['Resource types'].apply(wildcard_match_list,check_list=check_list)
+                resources_set = pd.concat((resources_set, resources_auth))
+            except Exception as e:
+                print(f"Error {e}")
 
     if res_key == 'NotResource':
         not_list = resources_set.loc[resources_set['in_policy']==True]['Resource types'].drop_duplicates()
@@ -194,6 +200,7 @@ def calculate_actions_by_resource_lst(actions: pd.DataFrame, resources: pd.DataF
     '''
     # Prep the actions
     # Deduplicate the set of actions
+    actions = actions.reset_index(drop=True)
     actions.loc[actions['resource_service'].isna(), 'resource_service'] = actions['Prefix']
     actions_list = actions[['Prefix','Actions']].drop_duplicates()
 
@@ -211,6 +218,8 @@ def calculate_actions_by_resource_lst(actions: pd.DataFrame, resources: pd.DataF
     actions_list['Optional resources'] = actions_list['Resource types (*required)'] - actions_list['Required resources']
     actions_list['Required resources'] = [{t.replace("*","") for t in x if t.endswith('*')} for x in actions_list['Required resources']]
 
+    # The logic here is hard.
+    # 
     resources = resources.loc[resources['in_policy']==True]
     resources = resources[['Resource types','resource_service']].groupby(['resource_service'],dropna=False)['Resource types'].apply(set).to_frame()
     actions_list = pd.merge(actions_list, resources, how='left', left_on=['resource_service'], right_on=['resource_service'])
@@ -276,6 +285,7 @@ def determine_effective_permissions_for_policy(policy):
     effective_permissions.loc[effective_permissions['Exist'] == 'left_only', 'Effect'] = "Allowed"
     effective_permissions.loc[effective_permissions['Exist'] == 'both', 'Effect'] = "Denied"
     effective_permissions.loc[effective_permissions['Exist'] == 'right_only', 'Effect'] = "Denied"
+    effective_permissions = effective_permissions.drop(labels=['index_allow','index_deny'], axis=1)
 
     return effective_permissions
 
