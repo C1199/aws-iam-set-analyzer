@@ -167,7 +167,7 @@ def calculate_set_of_resources(statement):
 
     for key in resources_dict:
         if key == '*':
-            resources_auth = load_service_auth.load_all_resource_auth()
+            resources_auth = load_service_auth.load_global_resources_set()
             resources_auth['in_policy'] = True
             resources_set = resources_auth
             break
@@ -179,7 +179,7 @@ def calculate_set_of_resources(statement):
 
     if res_key == 'NotResource':
         not_list = resources_set.loc[resources_set['in_policy']==True]['Resource types'].drop_duplicates()
-        resources_auth = load_service_auth.load_all_resource_auth()
+        resources_auth = load_service_auth.load_global_resources_set()
         resources_auth = resources_auth.merge(not_list, how='left',on=['Resource types'],indicator='Exist')
         resources_auth['in_policy'] = resources_auth['Exist']!='both'
         resources_set = resources_auth
@@ -187,13 +187,12 @@ def calculate_set_of_resources(statement):
     return resources_set
 
 
-def calculate_actions_by_resource_lst(service_actions: pd.DataFrame, resources):
+def calculate_actions_by_resource_lst(actions: pd.DataFrame, resources: pd.DataFrame):
     '''
     service_actions: pandas dataframe containing an "Actions" table
     resources: list, of resources types in a single policy statement
     '''
-
-    actions = service_actions
+    # Prep the actions
     # Deduplicate the set of actions
     actions_list = actions[['Prefix','Actions']].drop_duplicates()
 
@@ -208,48 +207,22 @@ def calculate_actions_by_resource_lst(service_actions: pd.DataFrame, resources):
     actions_list['Required resources'] = [{t for t in x if t.endswith('*')} for x in actions_list['Required resources']]
     # Use set maths to identity the optional resources
     actions_list['Optional resources'] = actions_list['Resource types (*required)'] - actions_list['Required resources']
+    actions_list['Required resources'] = [{t.replace("*","") for t in x if t.endswith('*')} for x in actions_list['Required resources']]
 
-    # below we are duplicating our resource list into:
-    # # a list with '*' on each
-    # # a list without '*' on each
-    # sanitising our resource list
-    # attached the * to them
-    resource_with_star = []
-    resources_without_star = []
-    none_in_resource_list = False
-    for x in resources:
-        if x == None:
-            resource_with_star.append(x)
-            print(f"appending none type {x} to list")
-            none_in_resource_list = True
-            pass
-        else:
-            try:
-                if x.endswith('*'):
-                    resource_with_star.append(x)
-                    t = x.replace('*','')
-                    resources_without_star.append(t)
-                else:
-                    t = x +"*"
-                    resource_with_star.append(t)
-                    resources_without_star.append(x)
-            except Exception as e:
-                print(x)
-
-    resource_with_star = set(resource_with_star)
-    resources_without_star = set(resources_without_star)
-    # calculate which Actions have required resources that are subsets of our chosen resources
-    actions_list['Valid'] = (actions_list['Required resources'] <= set(resource_with_star)) & (len(actions_list['Required resources'])>0)
-    actions_list['Valid'] = actions_list['Required resources'] <= set(resource_with_star)
+    resources = resources.loc[resources['in_policy']==True]
+    resources = resources[['Resource types','resource_service']].groupby(['resource_service'],dropna=False)['Resource types'].apply(set).to_frame()
+    actions_list = pd.merge(actions_list, resources, how='left', left_on=['Prefix'], right_on=['resource_service'])
+    actions_list['Valid'] = actions_list['Required resources'] <= actions_list['Resource types']
 
     # remove empty sets from the solution
     actions_list.loc[actions_list['Required resources']==set(), ['Valid']] = False
 
     # Calcuate actions that might be Valid
-    actions_list['Maybe'] = [ set.intersection(x, resources_without_star) for x in actions_list['Optional resources']]
-    actions_list.loc[(actions_list['Required resources']==set())&(actions_list['Maybe']!=set()), ['Valid']] = True
-    if none_in_resource_list:
-        actions_list.loc[(actions_list['Optional resources'] == actions_list['Resource types (*required)']), ['Valid']] = True
+    actions_list['Maybe'] = actions_list['Optional resources'] <= actions_list['Resource types']
+    actions_list.loc[(actions_list['Required resources']==set())&(actions_list['Maybe']!=False), ['Valid']] = True
+    #if none_in_resource_list:
+    #    actions_list.loc[(actions_list['Optional resources'] == actions_list['Resource types (*required)']), ['Valid']] = True
+    actions_list = actions_list.drop(['Resource types'], axis=1)
 
     return actions_list
 
@@ -262,8 +235,7 @@ def calculate_set_of_valid_action_resource_pairs_for_statement(statement):
 
     actions_set = calculate_set_of_actions(statement)
     resources_set = calculate_set_of_resources(statement)
-    resource_list = resources_set.loc[resources_set['in_policy']==True]['Resource types'].drop_duplicates().to_list()
-    actions_list = calculate_actions_by_resource_lst(actions_set,resource_list)
+    actions_list = calculate_actions_by_resource_lst(actions_set,resources_set)
 
     return actions_list
 
