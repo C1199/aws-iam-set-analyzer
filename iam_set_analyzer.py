@@ -1,10 +1,6 @@
 import argparse
-import scrape_iam_actions.load_service_auth
 import set_analyzer.analyzer
-import scrape_iam_actions
 import set_analyzer.reporter
-import pandas as pd
-
 
 def build_arg_parser():
 

@@ -212,7 +212,7 @@ def calculate_actions_by_resource_lst(actions: pd.DataFrame, resources: pd.DataF
     # Merge the resource sets onto the list of actions
     actions_list = pd.merge(actions_list.reset_index(), actions_groupby.reset_index(), 'left', left_on=['Prefix','Actions'], right_on=['Prefix','Actions'])
     # identify the required resources by the presence of '*'
-    actions_list['Required resources'] = [{t for t in x if (type(t)==str)} for x in actions_list['Resource types (*required)']]
+    actions_list['Required resources'] = [{t for t in x if isinstance(t,str)} for x in actions_list['Resource types (*required)']]
     actions_list['Required resources'] = [{t for t in x if t.endswith('*')} for x in actions_list['Required resources']]
     # Use set maths to identity the optional resources
     actions_list['Optional resources'] = actions_list['Resource types (*required)'] - actions_list['Required resources']
@@ -289,12 +289,70 @@ def determine_effective_permissions_for_policy(policy):
 
     return effective_permissions
 
+def calculate_boundary_effect(data: pd.Series, boundary_allow = True):
+    '''
+    
+    '''
+    print(data)
+    if boundary_allow:
+        if data['bound'] == 'both':
+            print('yo')
+            print(data['Effect_boundary'])
+            print(data['Effect_final'])
+            if (data['Effect_boundary'] == "Denied") or (data['Effect_final'] == "Denied"):
+                print('yeah')
+                effect = "Denied"
+            else:
+                print('boo')
+                effect = "Allowed"
+        else:
+            effect = "Denied"
+        print(effect)
+        return effect
+
+    if data['bound'] == 'left_only':
+        effect = data['Effect_final']
+    elif data['bound'] == 'both':
+        if (data['Effect_boundary'] == "Denied") or (data['Effect_final'] == "Denied"):
+            effect = "Denied"
+        else:
+            effect = "Allowed"
+    else:
+        effect = "Denied"
+    return effect
+
+def determine_effective_permissions_for_policy_and_boundary(policy, boundary_policies: list):
+    '''
+    Takes in an IAM policy and a set of permissions boundary policies (i.e. SCPs or a permissions boundary)
+    '''
+
+    policy_permissions = determine_effective_permissions_for_policy(policy)
+
+    total_actions_set = policy_permissions.copy()
+    total_actions_set['Effect_final'] = total_actions_set['Effect']
+
+    for boundary in boundary_policies:
+        # If a boundary contains an Effect:Deny statement, we only deny those actions
+        # if a boundary contains an Effect:Allow statement, then any action not contained in that list ends up being denied
+        boundary_permissions = determine_effective_permissions_for_policy(boundary)
+        boundary_allow = False
+        if 'Allowed' in boundary_permissions['Effect'].drop_duplicates().to_list():
+            boundary_allow = True
+        boundary_permissions['Effect_boundary'] = boundary_permissions['Effect']
+        total_actions_set = pd.merge(total_actions_set[['Prefix','Actions','Effect_final']], boundary_permissions[['Prefix','Actions','Effect_boundary']], how='outer', on=['Prefix','Actions'],indicator="bound",suffixes=['_policy','_boundary'])[['Prefix','Actions','Effect_final','Effect_boundary','bound']]
+        total_actions_set['Effect_final'] = total_actions_set[['Effect_final','Effect_boundary','bound']].apply(calculate_boundary_effect,axis=1,boundary_allow=boundary_allow)
+
+    policy_permissions = pd.merge(policy_permissions, total_actions_set[['Prefix','Actions','Effect_final']], on=['Prefix','Actions'], how='left')
+
+    return policy_permissions
 
 if __name__ == "__main__":
 
-    thing = load_policy_from_file("tests/test-policy.json")
+    thing = load_policy_from_file("tests/test-policy-8.json")
     policy=thing
     actions = determine_effective_permissions_for_policy(policy)
+    actions.loc[actions['Prefix']=='ec2']
+    boundary = load_policy_from_file("tests/boundary/deny-iam-2.json")
 
     statement = thing['Statement'][0]
 
