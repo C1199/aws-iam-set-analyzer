@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Policy Report</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/themes/prism.min.css" rel="stylesheet" />
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -35,8 +36,19 @@
             padding: 8px;
             text-align: left;
         }
-        th {
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 1;
             background-color: #f4f4f4;
+        }
+        .allowed {
+            background-color: green;
+            color: white;
+        }
+        .denied {
+            background-color: red;
+            color: white;
         }
     </style>
 </head>
@@ -45,12 +57,37 @@
     <h1>Policy Report</h1>
 
     <h2>Policy</h2>
-    <pre>{{ policy_json | tojson(indent=2) }}</pre>
+    <button id="togglePolicyButton">Expand Policy</button>
+    <pre id="policyJsonPre" class="language-json" style="display: none;">{{ policy_json | tojson(indent=2) }}</pre>
+
+
+    {% if boundary_policies %}
+    <h2>Boundary Policies</h2>
+    <button id="toggleBoundaryButton">Expand Policy</button>
+    <div id="boundaryJsonPre" style="display: block;">
+    {% for policy in boundary_policies %}
+    <pre class="language-json">{{ policy | tojson(indent=2) }}</pre>
+    {% endfor %}
+    </div>
+    {% endif %}
 
     <h2>Effective Permissions</h2>
     
-    <div>
-    {{ report_table | safe }}
+    <button id="toggleButton">Expand Table</button>
+    <div id="reportTableDiv" style="display: none;">
+    <table id="reportTable">
+        <thead>
+            <tr id="headerRow">
+                <!-- Headers will be dynamically added here -->
+            </tr>
+            <tr id="filterRow">
+                <!-- Filter inputs will be dynamically added here -->
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            <!-- Table body will be populated with data -->
+        </tbody>
+    </table>
     </div>
     
     <h2>Findings</h2>
@@ -58,5 +95,110 @@
         <li>item</li>
     </ul>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/prism.min.js"></script>
+<script>
+    document.getElementById('toggleButton').addEventListener('click', function() {
+        var reportTableDiv = document.getElementById('reportTableDiv');
+        if (reportTableDiv.style.display === 'none') {
+            reportTableDiv.style.display = 'block';
+            this.textContent = 'Collapse Table';
+        } else {
+            reportTableDiv.style.display = 'none';
+            this.textContent = 'Expand Table';
+        }
+    });
+    document.getElementById('togglePolicyButton').addEventListener('click', function() {
+        var policyJsonPre = document.getElementById('policyJsonPre');
+        if (policyJsonPre.style.display === 'none') {
+            policyJsonPre.style.display = 'block';
+            this.textContent = 'Collapse Policy';
+        } else {
+            policyJsonPre.style.display = 'none';
+            this.textContent = 'Expand Policy';
+        }
+    });
+    document.getElementById('toggleBoundaryButton').addEventListener('click', function() {
+        var policyJsonPre = document.getElementById('boundaryJsonPre');
+        if (policyJsonPre.style.display === 'none') {
+            policyJsonPre.style.display = 'block';
+            this.textContent = 'Collapse Policy';
+        } else {
+            policyJsonPre.style.display = 'none';
+            this.textContent = 'Expand Policy';
+        }
+    });
+    // Sample JSON data for the table
+    //IGNORE THIS ERROR: this is a linting error which can be safely ignored
+    const reportTableData = {{ report_table | tojson(indent=2) }}; 
+    //IGNORE THIS ERROR: this is a linting error which can be safely ignored
+    
+    // Function to create table headers and filters
+    function createTableHeadersAndFilters(data) {
+        const headerRow = document.getElementById('headerRow');
+        const filterRow = document.getElementById('filterRow');
+        const headers = Object.keys(data[0]);
+
+        headers.forEach((header, index) => {
+            // Create header cell
+            const th = document.createElement('th');
+            th.textContent = header;
+            headerRow.appendChild(th);
+
+            // Create filter input
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.placeholder = `Filter ${header}`;
+            input.onkeyup = function() {
+                filterTable(index, this.value);
+            };
+            const filterTh = document.createElement('th');
+            filterTh.appendChild(input);
+            filterRow.appendChild(filterTh);
+        });
+    }
+
+    // Function to populate table body with data
+    function populateTableBody(data) {
+        const tableBody = document.getElementById('tableBody');
+        data.forEach(rowData => {
+            const tr = document.createElement('tr');
+            Object.values(rowData).forEach(cellData => {
+                const td = document.createElement('td');
+                if (Array.isArray(cellData)) {
+                    // Replace null values in the array with "None"
+                    const processedArray = cellData.map(item => item === null ? 'None' : item);
+                    td.textContent = processedArray.join(', ');
+                } else {
+                    td.textContent = cellData === null ? 'None' : cellData;
+                }
+                // Apply styling based on cell content
+                if (td.textContent.includes('Allowed')) {
+                    td.classList.add('allowed');
+                } else if (td.textContent.includes('Denied')) {
+                    td.classList.add('denied');
+                }
+                tr.appendChild(td);
+            });
+            tableBody.appendChild(tr);
+        });
+    }
+
+    // Function to filter table rows based on input
+    function filterTable(columnIndex, filterValue) {
+        const table = document.getElementById('reportTable');
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const cell = row.cells[columnIndex];
+            if (cell) {
+                const text = cell.textContent || cell.innerText;
+                row.style.display = text.toLowerCase().includes(filterValue.toLowerCase()) ? '' : 'none';
+            }
+        });
+    }
+
+    // Initialize table with headers, filters, and data
+    createTableHeadersAndFilters(reportTableData);
+    populateTableBody(reportTableData);
+</script>
 </body>
 </html>

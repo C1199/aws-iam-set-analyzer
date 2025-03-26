@@ -133,11 +133,7 @@ def calculate_set_of_actions(statement):
 
     actions_set = actions_set.loc[actions_set['in_policy']==True]
 
-    print("actions head")
-    print(actions_set)
-
     if act_key == 'NotAction':
-        print(f"Not Action!!!")
         not_list = actions_set.loc[actions_set['in_policy']==True][['Prefix','Actions']].drop_duplicates(ignore_index=True)
         service_auth = load_service_auth.load_all_service_auth()
         service_auth = service_auth.merge(not_list, how='left',on=['Prefix','Actions'],indicator='Exist')
@@ -293,21 +289,14 @@ def calculate_boundary_effect(data: pd.Series, boundary_allow = True):
     '''
     
     '''
-    print(data)
     if boundary_allow:
         if data['bound'] == 'both':
-            print('yo')
-            print(data['Effect_boundary'])
-            print(data['Effect_final'])
             if (data['Effect_boundary'] == "Denied") or (data['Effect_final'] == "Denied"):
-                print('yeah')
                 effect = "Denied"
             else:
-                print('boo')
                 effect = "Allowed"
         else:
             effect = "Denied"
-        print(effect)
         return effect
 
     if data['bound'] == 'left_only':

@@ -5,7 +5,7 @@ from pathlib import Path
 
 base_url = "https://docs.aws.amazon.com/service-authorization/latest/reference/"
 base_path = "scrape_iam_actions"
-base_tables = ["actions","resources","conditions"]
+base_tables = ["actions","resources","conditions","global_resources"]
 
 # setup data paths
 for item in base_tables:
