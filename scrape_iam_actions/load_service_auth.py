@@ -82,6 +82,7 @@ def create_resources_global_set():
 
 def load_global_resources_set():
     df = pd.read_json(f"{base_path}/global_resources/global_resources.json",orient="table")
+    df = df.replace({pd.NA: None})
     return df
 
 if __name__ == "__main__":
