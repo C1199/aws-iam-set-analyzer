@@ -40,4 +40,3 @@ if __name__ == "__main__":
         data = json.loads(result.to_json(orient='table'))['data']
         set_analyzer.reporter.render_template(policy,data, boundary_policies)
 
-        #result.to_html('tmp.html')

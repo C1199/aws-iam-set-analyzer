@@ -97,36 +97,59 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/prism.min.js"></script>
 <script>
-    document.getElementById('toggleButton').addEventListener('click', function() {
-        var reportTableDiv = document.getElementById('reportTableDiv');
-        if (reportTableDiv.style.display === 'none') {
-            reportTableDiv.style.display = 'block';
-            this.textContent = 'Collapse Table';
-        } else {
-            reportTableDiv.style.display = 'none';
-            this.textContent = 'Expand Table';
+    try {
+        const toggleButton = document.getElementById('toggleButton');
+        if (toggleButton) {
+            toggleButton.addEventListener('click', function() {
+                var reportTableDiv = document.getElementById('reportTableDiv');
+                if (reportTableDiv.style.display === 'none') {
+                    reportTableDiv.style.display = 'block';
+                    this.textContent = 'Collapse Table';
+                } else {
+                    reportTableDiv.style.display = 'none';
+                    this.textContent = 'Expand Table';
+                }
+            });
         }
-    });
-    document.getElementById('togglePolicyButton').addEventListener('click', function() {
-        var policyJsonPre = document.getElementById('policyJsonPre');
-        if (policyJsonPre.style.display === 'none') {
-            policyJsonPre.style.display = 'block';
-            this.textContent = 'Collapse Policy';
-        } else {
-            policyJsonPre.style.display = 'none';
-            this.textContent = 'Expand Policy';
+    } catch (error) {
+        console.error('Error setting up toggleButton event listener:', error);
+    }
+    try {
+        const togglePolicyButton = document.getElementById('togglePolicyButton');
+        if (togglePolicyButton) {
+            togglePolicyButton.addEventListener('click', function() {
+                var policyJsonPre = document.getElementById('policyJsonPre');
+                if (policyJsonPre.style.display === 'none') {
+                    policyJsonPre.style.display = 'block';
+                    this.textContent = 'Collapse Policy';
+                } else {
+                    policyJsonPre.style.display = 'none';
+                    this.textContent = 'Expand Policy';
+                }
+            });
         }
-    });
-    document.getElementById('toggleBoundaryButton').addEventListener('click', function() {
-        var policyJsonPre = document.getElementById('boundaryJsonPre');
-        if (policyJsonPre.style.display === 'none') {
-            policyJsonPre.style.display = 'block';
-            this.textContent = 'Collapse Policy';
-        } else {
-            policyJsonPre.style.display = 'none';
-            this.textContent = 'Expand Policy';
+    } catch (error) {
+        console.error('Error setting up togglePolicyButton event listener:', error);
+    }
+    
+    try {
+        const toggleBoundaryButton = document.getElementById('toggleBoundaryButton');
+        if (toggleBoundaryButton) {
+            toggleBoundaryButton.addEventListener('click', function() {
+                var boundaryJsonPre = document.getElementById('boundaryJsonPre');
+                if (boundaryJsonPre.style.display === 'none') {
+                    boundaryJsonPre.style.display = 'block';
+                    this.textContent = 'Collapse Policy';
+                } else {
+                    boundaryJsonPre.style.display = 'none';
+                    this.textContent = 'Expand Policy';
+                }
+            });
         }
-    });
+    } catch (error) {
+        console.error('Error setting up toggleBoundaryButton event listener:', error);
+    }
+    
     // Sample JSON data for the table
     //IGNORE THIS ERROR: this is a linting error which can be safely ignored
     const reportTableData = {{ report_table | tojson(indent=2) }}; 

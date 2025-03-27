@@ -188,6 +188,18 @@ def calculate_set_of_resources(statement):
 
     return resources_set
 
+def determine_whether_optional_resources_validate_action(data):
+    '''
+    There are actions for which no specific resource is required, but instead are optional. 
+    If any resources in our statement is present for such an action, then that action will be available to us.
+    '''
+    try:
+        for resource in data['Resource types']:
+            if resource in data['Optional resources']:
+                return True
+    except Exception:
+        pass
+    return False
 
 def calculate_actions_by_resource_lst(actions: pd.DataFrame, resources: pd.DataFrame):
     '''
@@ -225,7 +237,7 @@ def calculate_actions_by_resource_lst(actions: pd.DataFrame, resources: pd.DataF
     actions_list.loc[actions_list['Required resources']==set(), ['Valid']] = False
 
     # Calcuate actions that might be Valid
-    actions_list['Maybe'] = actions_list['Optional resources'] <= actions_list['Resource types']
+    actions_list['Maybe'] = actions_list[['Resource types','Optional resources']].apply(determine_whether_optional_resources_validate_action, axis=1)
     actions_list.loc[(actions_list['Required resources']==set())&(actions_list['Maybe']!=False), ['Valid']] = True
     #if none_in_resource_list:
     #    actions_list.loc[(actions_list['Optional resources'] == actions_list['Resource types (*required)']), ['Valid']] = True
@@ -283,6 +295,8 @@ def determine_effective_permissions_for_policy(policy):
     effective_permissions.loc[effective_permissions['Exist'] == 'right_only', 'Effect'] = "Denied"
     effective_permissions = effective_permissions.drop(labels=['index_allow','index_deny'], axis=1)
 
+
+
     return effective_permissions
 
 def calculate_boundary_effect(data: pd.Series, boundary_allow = True):
@@ -334,19 +348,3 @@ def determine_effective_permissions_for_policy_and_boundary(policy, boundary_pol
     policy_permissions = pd.merge(policy_permissions, total_actions_set[['Prefix','Actions','Effect_final']], on=['Prefix','Actions'], how='left')
 
     return policy_permissions
-
-if __name__ == "__main__":
-
-    thing = load_policy_from_file("tests/test-policy-8.json")
-    policy=thing
-    actions = determine_effective_permissions_for_policy(policy)
-    actions.loc[actions['Prefix']=='ec2']
-    boundary = load_policy_from_file("tests/boundary/deny-iam-2.json")
-
-    statement = thing['Statement'][0]
-
-    result = calculate_set_of_actions(statement)
-
-    result = calculate_set_of_resources(statement)
-    result
-    resource_list = result.loc[result['in_policy']==True]['Resource types'].to_list()
